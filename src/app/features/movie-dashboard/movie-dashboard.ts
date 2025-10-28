@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { DisplayMovie, OpenAiMovieSuggestion } from '../../models/movie';
 import { environment } from '@env/environment';
+import { OpenAiError, OpenAiService } from 'app/services/openai.service';
 
 const OPENAI_API_KEY = environment.openAiApiKey ?? '';
 
@@ -13,6 +14,8 @@ const OPENAI_API_KEY = environment.openAiApiKey ?? '';
   styleUrl: './movie-dashboard.css',
 })
 export class MovieDashboardComponent {
+  private readonly openAiService = inject(OpenAiService);
+
   private activeRequest: AbortController | null = null;
   private debounceHandle: ReturnType<typeof setTimeout> | null = null;
 
@@ -66,6 +69,7 @@ export class MovieDashboardComponent {
   });
 
   protected updateSearch(term: string) {
+    console.log('Search Update', term)
     this.searchTerm.set(term);
   }
 
@@ -110,6 +114,7 @@ export class MovieDashboardComponent {
       return;
     }
 
+    console.log('Ai Fetch', prompt)
     this.debounceHandle = setTimeout(() => this.runOpenAi(prompt, key), 600);
   }
 
@@ -121,6 +126,47 @@ export class MovieDashboardComponent {
 
     const controller = new AbortController();
     this.activeRequest = controller;
+
+    this.openAiService
+      .suggestMovies(prompt, apiKey, controller.signal)
+      .then((suggestions) => {
+        if (this.activeRequest !== controller) {
+          return;
+        }
+        console.log('response:', suggestions)
+        this.aiSuggestions.set(suggestions);
+        this.aiStatus.set(suggestions.length ? 'ready' : 'idle');
+        if (!suggestions.length) {
+          this.aiError.set('No results matched this prompt. Try expanding your description.');
+        }
+      })
+      .catch((error: unknown) => {
+        if (this.activeRequest !== controller) {
+          return;
+        }
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+        this.aiStatus.set('error');
+        let message = 'Something went wrong while fetching OpenAI suggestions.';
+        if (error instanceof OpenAiError) {
+          if (error.code === 'insufficient_quota') {
+            message =
+              'Your OpenAI key has no remaining quota. Please review your plan or switch keys.';
+          } else {
+            message = error.message;
+          }
+        } else if (error instanceof Error) {
+          message = error.message;
+        }
+        this.aiError.set(message);
+        this.aiSuggestions.set([]);
+      })
+      .finally(() => {
+        if (this.activeRequest === controller) {
+          this.activeRequest = null;
+        }
+      });
   }
 
   private cancelActiveRequest() {
