@@ -69,7 +69,6 @@ export class MovieDashboardComponent {
   });
 
   protected updateSearch(term: string) {
-    console.log('Search Update', term)
     this.searchTerm.set(term);
   }
 
@@ -114,7 +113,6 @@ export class MovieDashboardComponent {
       return;
     }
 
-    console.log('Ai Fetch', prompt)
     this.debounceHandle = setTimeout(() => this.runOpenAi(prompt, key), 600);
   }
 
@@ -133,7 +131,6 @@ export class MovieDashboardComponent {
         if (this.activeRequest !== controller) {
           return;
         }
-        console.log('response:', suggestions)
         this.aiSuggestions.set(suggestions);
         this.aiStatus.set(suggestions.length ? 'ready' : 'idle');
         if (!suggestions.length) {
