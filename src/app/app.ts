@@ -1,12 +1,14 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { MovieDashboardComponent } from './features/movie-dashboard/movie-dashboard';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
-  templateUrl: './app.html',
-  styleUrl: './app.css'
+  standalone: true,
+  imports: [RouterOutlet, MovieDashboardComponent],
+  template: `
+    <app-movie-dashboard />
+    <router-outlet />
+  `
 })
-export class App {
-  protected readonly title = signal('movieAi');
-}
+export class App {}
