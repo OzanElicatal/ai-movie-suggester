@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { DisplayMovie, OpenAiMovieSuggestion } from '../../models/movie';
+import { environment } from '@env/environment';
 
-const OPENAI_API_KEY = '';
+const OPENAI_API_KEY = environment.openAiApiKey ?? '';
 
 @Component({
   selector: 'app-movie-dashboard',
